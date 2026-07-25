@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SANTECH SERVICE</title>
@@ -119,6 +122,19 @@
         // Cek jika sudah login, langsung lempar ke dashboard
         if(localStorage.getItem('user_session')) {
             window.location.href = "dashboard.html";
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registered dengan sukses!');
+                })
+                .catch(err => {
+                    console.log('ServiceWorker gagal didaftarkan: ', err);
+                });
+            });
         }
     </script>
 </body>
