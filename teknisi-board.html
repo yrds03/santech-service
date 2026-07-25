@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace Teknisi - SAN HP</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --primary: #2563EB; --bg-body: #F8FAFC; --bg-card: #FFFFFF;
+            --border-color: #E2E8F0; --text-main: #0F172A; --text-sec: #64748B;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; overflow-x: hidden; }
+        
+        .app-container { display: flex; height: 100vh; }
+        
+        /* SIDEBAR GELAP MIRIP MOCKUP */
+        .sidebar { width: 250px; background: #0F172A; border-right: none; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 1000; }
+        .sidebar-logo { padding: 20px; font-size: 20px; font-weight: 700; color: #FFFFFF; border-bottom: 1px solid #1E293B; display: flex; align-items: center; gap: 10px; }
+        .nav-item-custom { padding: 12px 20px; color: #94A3B8; text-decoration: none; display: flex; align-items: center; gap: 15px; font-weight: 500; transition: 0.2s; }
+        .nav-item-custom:hover, .nav-item-custom.active { color: #FFFFFF; background: #1E293B; border-right: 4px solid var(--primary); }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
+        .top-navbar { background: #FFFFFF; height: 70px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 999; }
+        
+        /* KANBAN BOARD STYLE */
+        .board-container { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; }
+        .board-column { flex: 1; min-width: 300px; background: #F1F5F9; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 15px; height: calc(100vh - 150px); overflow-y: auto; }
+        .board-header { font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .job-card { background: white; border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .job-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(37,99,235,0.1); transform: translateY(-2px); }
+        
+        /* Layout Mobile */
+        .bottom-nav { display: none; position: fixed; bottom: 0; width: 100%; background: #FFFFFF; border-top: 1px solid var(--border-color); box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; justify-content: space-around; padding: 10px 0; }
+        .b-nav-item { text-align: center; color: var(--text-sec); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .b-nav-item.active { color: var(--primary); }
+
+        @media (max-width: 767px) {
+            .sidebar { display: none; }
+            .top-navbar { padding: 0 15px; }
+            .board-container { flex-direction: column; }
+            .board-column { height: auto; min-height: 200px; }
+            .bottom-nav { display: flex; }
+            .main-content { padding-bottom: 80px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- SIDEBAR FULL LINK -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-logo"><i data-lucide="cpu"></i> <span>SANTECH SERVICE</span></div>
+            <div class="mt-3">
+                <a href="dashboard.html" class="nav-item-custom"><i data-lucide="layout-dashboard"></i> <span>Dashboard</span></a>
+                <a href="service.html" class="nav-item-custom"><i data-lucide="wrench"></i> <span>Service</span></a>
+                <a href="customer.html" class="nav-item-custom"><i data-lucide="users"></i> <span>Customer</span></a>
+                <a href="sparepart.html" class="nav-item-custom"><i data-lucide="package"></i> <span>Sparepart</span></a>
+                <a href="teknisi-board.html" class="nav-item-custom active"><i data-lucide="pen-tool"></i> <span>Ruang Teknisi</span></a>
+                <a href="kasir.html" class="nav-item-custom"><i data-lucide="calculator"></i> <span>Kasir / POS</span></a>
+                <a href="laporan.html" class="nav-item-custom"><i data-lucide="bar-chart-3"></i> <span>Laporan</span></a>
+                <a href="pengaturan.html" class="nav-item-custom"><i data-lucide="settings"></i> <span>Pengaturan</span></a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <h4 class="mb-0">Ruang Kerja Teknisi</h4>
+                <div class="d-flex align-items-center gap-2" id="userProfileInfo"></div>
+            </header>
+
+            <div class="p-4">
+                <div class="board-container">
+                    
+                    <div class="board-column">
+                        <div class="board-header">
+                            <span>Antrian Masuk</span>
+                            <span class="badge bg-secondary rounded-pill" id="countAntrian">0</span>
+                        </div>
+                        <div id="colAntrian">
+                            <div class="text-center text-sec text-sm py-3">Memuat...</div>
+                        </div>
+                    </div>
+
+                    <div class="board-column">
+                        <div class="board-header">
+                            <span>Sedang Diproses</span>
+                            <span class="badge bg-primary rounded-pill" id="countProses">0</span>
+                        </div>
+                        <div id="colProses"></div>
+                    </div>
+
+                    <div class="board-column">
+                        <div class="board-header">
+                            <span>Siap Diambil (Selesai)</span>
+                            <span class="badge bg-success rounded-pill" id="countSelesai">0</span>
+                        </div>
+                        <div id="colSelesai"></div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL UPDATE STATUS TEKNISI -->
+    <div class="modal fade" id="modalUpdateTeknisi" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: none;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="titleUpdateModal">Update Service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formUpdateTeknisi">
+                        <input type="hidden" id="u_id_service">
+                        
+                        <div class="alert alert-light border mb-4">
+                            <div class="fw-bold" id="infoHp">Apple iPhone 13 Pro</div>
+                            <div class="text-sec" style="font-size: 13px;" id="infoKeluhan">Keluhan: LCD Blank Hitam</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Update Status Ke</label>
+                            <select class="form-select" id="u_status" style="border-color: var(--primary);">
+                                <option value="Pengecekan Awal">Pengecekan Awal</option>
+                                <option value="Menunggu Approval Customer">Menunggu Approval Customer</option>
+                                <option value="Menunggu Sparepart">Menunggu Sparepart</option>
+                                <option value="Perbaikan">Sedang Diperbaiki</option>
+                                <option value="Quality Control (QC)">Quality Control (QC)</option>
+                                <option value="Selesai">Selesai (Siap Diambil)</option>
+                                <option value="Batal">Batal / Tidak Bisa</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Hasil Diagnosa Teknisi</label>
+                            <textarea class="form-control" id="u_diagnosa" rows="2" placeholder="Cth: LCD pecah dalam, harus ganti 1 set"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Catatan / Sparepart yang Dipakai</label>
+                            <textarea class="form-control" id="u_catatan" rows="2" placeholder="Cth: Pakai LCD Original, Lem T7000"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" id="btnSaveUpdate">
+                            <span id="txtSave">Simpan Perubahan</span>
+                            <div id="loadingSave" class="spinner-border spinner-border-sm d-none"></div>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV MOBILE -->
+    <div class="bottom-nav">
+        <a href="dashboard.html" class="b-nav-item"><i data-lucide="home"></i> <span>Home</span></a>
+        <a href="service.html" class="b-nav-item"><i data-lucide="wrench"></i> <span>Service</span></a>
+        <a href="kasir.html" class="b-nav-item"><i data-lucide="calculator"></i> <span>Kasir</span></a>
+        <a href="sparepart.html" class="b-nav-item"><i data-lucide="package"></i> <span>Stok</span></a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        lucide.createIcons();
+        
+        // =========================================================================
+        // 👇 MASUKAN LINK URL DEPLOY GOOGLE APPS SCRIPT ANDA DI BAWAH INI 👇
+        // =========================================================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbyU5XBt076eZuFxWmfmI57Av_XazxpYFm_TEftCAZbRGyRXP7D_2NLnwwNU-7y7RTw0/exec";
+        // =========================================================================
+        
+        let currentUser = "Teknisi Default";
+        const session = localStorage.getItem('user_session');
+        if(session) {
+            let ud = JSON.parse(session);
+            currentUser = ud.nama_lengkap;
+            document.getElementById('userProfileInfo').innerHTML = `<span class="badge bg-light text-dark border">${ud.nama_lengkap} (${ud.role})</span>`;
+        }
+
+        function loadBoard() {
+            fetch(API_URL + "?action=getServiceList")
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === "success") {
+                    let colA = "", colB = "", colC = "";
+                    let cA = 0, cB = 0, cC = 0;
+
+                    res.data.forEach(item => {
+                        let st = item.status_service.toLowerCase();
+                        
+                        let cardHtml = `
+                            <div class="job-card" onclick="openUpdateModal('${item.id_service}', '${item.brand_hp} ${item.tipe_hp}', '${item.keluhan_kerusakan.replace(/'/g, "\\'")}', '${item.status_service}')">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="fw-bold" style="font-size: 14px;">${item.id_service}</span>
+                                </div>
+                                <div class="text-primary fw-medium mb-1">${item.brand_hp} ${item.tipe_hp}</div>
+                                <div class="text-sec" style="font-size: 12px; line-height: 1.4;">${item.keluhan_kerusakan.substring(0,60)}...</div>
+                                <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-light text-dark border">${item.status_service}</span>
+                                    <i data-lucide="chevron-right" style="width: 16px; color: var(--text-sec);"></i>
+                                </div>
+                            </div>
+                        `;
+
+                        if(st.includes("selesai") || st.includes("qc")) { colC += cardHtml; cC++; } 
+                        else if (st.includes("perbaikan") || st.includes("sparepart") || st.includes("approval") || st.includes("dikerjakan")) { colB += cardHtml; cB++; } 
+                        else if (!st.includes("batal") && !st.includes("diambil")) { colA += cardHtml; cA++; }
+                    });
+
+                    document.getElementById('colAntrian').innerHTML = colA || '<div class="text-center text-sec text-sm py-3">Kosong</div>';
+                    document.getElementById('colProses').innerHTML = colB || '<div class="text-center text-sec text-sm py-3">Kosong</div>';
+                    document.getElementById('colSelesai').innerHTML = colC || '<div class="text-center text-sec text-sm py-3">Kosong</div>';
+                    
+                    document.getElementById('countAntrian').innerText = cA;
+                    document.getElementById('countProses').innerText = cB;
+                    document.getElementById('countSelesai').innerText = cC;
+                    
+                    lucide.createIcons();
+                }
+            });
+        }
+
+        loadBoard();
+
+        let modalUpdate = new bootstrap.Modal(document.getElementById('modalUpdateTeknisi'));
+        function openUpdateModal(id, hp, keluhan, status) {
+            document.getElementById('u_id_service').value = id;
+            document.getElementById('titleUpdateModal').innerText = "Update " + id;
+            document.getElementById('infoHp').innerText = hp;
+            document.getElementById('infoKeluhan').innerText = "Keluhan: " + keluhan;
+            
+            let sel = document.getElementById('u_status');
+            let found = Array.from(sel.options).some(opt => opt.value === status);
+            sel.value = found ? status : "Perbaikan";
+
+            document.getElementById('u_diagnosa').value = "";
+            document.getElementById('u_catatan').value = "";
+            
+            modalUpdate.show();
+        }
+
+        document.getElementById('formUpdateTeknisi').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('txtSave').classList.add('d-none');
+            document.getElementById('loadingSave').classList.remove('d-none');
+            document.getElementById('btnSaveUpdate').disabled = true;
+
+            const payload = {
+                action: "updateStatusService",
+                data: {
+                    id_service: document.getElementById('u_id_service').value,
+                    status_service: document.getElementById('u_status').value,
+                    diagnosa_teknisi: document.getElementById('u_diagnosa').value,
+                    catatan_teknisi: document.getElementById('u_catatan').value,
+                    user_login: currentUser,
+                    teknisi: currentUser
+                }
+            };
+
+            fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(r => r.json())
+            .then(res => {
+                if(res.status === "success") { modalUpdate.hide(); loadBoard(); } 
+                else { alert("Gagal mengupdate: " + res.message); }
+            })
+            .finally(() => {
+                document.getElementById('txtSave').classList.remove('d-none');
+                document.getElementById('loadingSave').classList.add('d-none');
+                document.getElementById('btnSaveUpdate').disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan - SANTECH SERVICE</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563EB; --primary-hover: #1D4ED8;
+            --bg-body: #F8FAFC; --bg-card: #FFFFFF;
+            --border-color: #E2E8F0; --text-main: #0F172A; --text-sec: #64748B;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; overflow-x: hidden; }
+        
+        .app-container { display: flex; height: 100vh; }
+        .sidebar { width: 250px; background: #FFFFFF; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 1000; }
+        .sidebar-logo { padding: 20px; font-size: 20px; font-weight: 700; color: var(--primary); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+        .nav-item-custom { padding: 12px 20px; color: var(--text-sec); text-decoration: none; display: flex; align-items: center; gap: 15px; font-weight: 500; transition: 0.2s; }
+        .nav-item-custom:hover, .nav-item-custom.active { color: var(--primary); background: #EFF6FF; border-right: 4px solid var(--primary); }
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
+        .top-navbar { background: #FFFFFF; height: 70px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 999; }
+        
+        .card-custom { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; height: 100%; }
+        
+        /* Layout Mobile */
+        .bottom-nav { display: none; position: fixed; bottom: 0; width: 100%; background: #FFFFFF; border-top: 1px solid var(--border-color); box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; justify-content: space-around; padding: 10px 0; }
+        .b-nav-item { text-align: center; color: var(--text-sec); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .b-nav-item.active { color: var(--primary); }
+
+        @media (max-width: 767px) {
+            .sidebar { display: none; }
+            .top-navbar { padding: 0 15px; }
+            .bottom-nav { display: flex; }
+            .main-content { padding-bottom: 80px; }
+        }
+
+        .stat-label { font-size: 13px; color: var(--text-sec); font-weight: 500; margin-bottom: 5px; }
+        .stat-value { font-size: 24px; font-weight: 700; margin-bottom: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-logo"><i data-lucide="cpu"></i> <span>SANTECH SERVICE</span></div>
+            <div class="mt-3">
+                <a href="dashboard.html" class="nav-item-custom"><i data-lucide="layout-dashboard"></i> <span>Dashboard</span></a>
+                <a href="service.html" class="nav-item-custom"><i data-lucide="wrench"></i> <span>Service</span></a>
+                <a href="customer.html" class="nav-item-custom"><i data-lucide="users"></i> <span>Customer</span></a>
+                <a href="sparepart.html" class="nav-item-custom"><i data-lucide="package"></i> <span>Sparepart</span></a>
+                <a href="laporan.html" class="nav-item-custom active"><i data-lucide="bar-chart-3"></i> <span>Laporan</span></a>
+                <a href="kasir.html" class="nav-item-custom"><i data-lucide="calculator"></i> <span>Kasir / POS</span></a>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="top-navbar">
+                <h4 class="mb-0">Laporan & Analitik</h4>
+                <div class="d-flex align-items-center gap-2" id="userProfileInfo"></div>
+            </header>
+
+            <div class="p-4">
+                
+                <!-- Filter Tanggal -->
+                <div class="card-custom mb-4 p-3 d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="calendar" class="text-sec"></i>
+                        <span class="fw-medium">Filter Periode:</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 flex-grow-1" style="max-width: 500px;">
+                        <input type="date" class="form-control" id="filterStart" style="width: 150px;">
+                        <span class="mt-2 text-sec">s/d</span>
+                        <input type="date" class="form-control" id="filterEnd" style="width: 150px;">
+                        <button class="btn btn-primary" onclick="loadLaporan()">Terapkan</button>
+                        <button class="btn btn-outline-secondary" onclick="resetFilter()">Reset</button>
+                    </div>
+                    <div class="ms-auto text-end">
+                        <small class="text-sec d-block">Menampilkan Data:</small>
+                        <strong class="text-primary" id="txtPeriode">Semua Waktu</strong>
+                    </div>
+                </div>
+
+                <div id="loadingIndicator" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="mt-2 text-sec">Memuat laporan...</div>
+                </div>
+
+                <div id="laporanContent" class="d-none">
+                    <!-- Section Keuangan -->
+                    <h5 class="fw-bold mb-3">Ringkasan Keuangan</h5>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-3 col-6">
+                            <div class="card-custom border-start border-primary border-4">
+                                <div class="stat-label">Pendapatan Kotor</div>
+                                <h3 class="stat-value text-primary" id="l_pendapatan">Rp 0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card-custom border-start border-danger border-4">
+                                <div class="stat-label">Pengeluaran Sparepart</div>
+                                <h3 class="stat-value text-danger" id="l_pengeluaran">Rp 0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card-custom border-start border-success border-4">
+                                <div class="stat-label">Profit Sementara</div>
+                                <h3 class="stat-value text-success" id="l_profit">Rp 0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card-custom border-start border-warning border-4">
+                                <div class="stat-label">Piutang Berjalan</div>
+                                <h3 class="stat-value text-warning" id="l_piutang">Rp 0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Section Performa Service -->
+                        <div class="col-lg-6">
+                            <h5 class="fw-bold mb-3">Performa Service</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-4">
+                                    <div class="card-custom text-center bg-light border-0">
+                                        <div class="stat-label">Service Masuk</div>
+                                        <h3 class="stat-value text-dark" id="s_masuk">0</h3>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card-custom text-center bg-success bg-opacity-10 border-0">
+                                        <div class="stat-label">Selesai (Sukses)</div>
+                                        <h3 class="stat-value text-success" id="s_selesai">0</h3>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card-custom text-center bg-danger bg-opacity-10 border-0">
+                                        <div class="stat-label">Batal / Gagal</div>
+                                        <h3 class="stat-value text-danger" id="s_batal">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart Proporsi -->
+                        <div class="col-lg-6">
+                            <div class="card-custom">
+                                <h6 class="mb-3 text-center">Rasio Keberhasilan Service</h6>
+                                <div style="height: 250px; display: flex; justify-content: center;">
+                                    <canvas id="serviceChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- BOTTOM NAV (Mobile) -->
+    <div class="bottom-nav">
+        <a href="dashboard.html" class="b-nav-item"><i data-lucide="home"></i> <span>Home</span></a>
+        <a href="service.html" class="b-nav-item"><i data-lucide="wrench"></i> <span>Service</span></a>
+        <a href="laporan.html" class="b-nav-item active"><i data-lucide="bar-chart-3"></i> <span>Laporan</span></a>
+        <a href="kasir.html" class="b-nav-item"><i data-lucide="calculator"></i> <span>Kasir</span></a>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // =========================================================================
+        // 👇 MASUKAN LINK URL DEPLOY GOOGLE APPS SCRIPT ANDA DI BAWAH INI 👇
+        // =========================================================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbyU5XBt076eZuFxWmfmI57Av_XazxpYFm_TEftCAZbRGyRXP7D_2NLnwwNU-7y7RTw0/exec";
+        // =========================================================================
+
+        // Cek Sesi
+        const session = localStorage.getItem('user_session');
+        if(session) {
+            let ud = JSON.parse(session);
+            document.getElementById('userProfileInfo').innerHTML = `<span class="badge bg-light text-dark border">${ud.nama_lengkap} (${ud.role})</span>`;
+        }
+
+        let chartInstance = null;
+
+        function formatRp(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+        }
+
+        function renderChart(selesai, batal, proses) {
+            const ctx = document.getElementById('serviceChart').getContext('2d');
+            
+            // Hapus chart lama jika ada
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Selesai / Sukses', 'Batal / Gagal', 'Sedang Diproses'],
+                    datasets: [{
+                        data: [selesai, batal, proses],
+                        backgroundColor: ['#22C55E', '#EF4444', '#3B82F6'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function loadLaporan() {
+            let start = document.getElementById('filterStart').value;
+            let end = document.getElementById('filterEnd').value;
+            
+            let url = API_URL + "?action=getLaporanData";
+            if(start && end) url += `&start_date=${start}&end_date=${end}`;
+
+            document.getElementById('loadingIndicator').classList.remove('d-none');
+            document.getElementById('laporanContent').classList.add('d-none');
+
+            fetch(url)
+            .then(r => r.json())
+            .then(res => {
+                if(res.status === "success") {
+                    document.getElementById('txtPeriode').innerText = res.periode;
+                    
+                    // Render Keuangan
+                    document.getElementById('l_pendapatan').innerText = formatRp(res.laporan_keuangan.pendapatan_kotor);
+                    document.getElementById('l_pengeluaran').innerText = formatRp(res.laporan_keuangan.pengeluaran_sparepart);
+                    document.getElementById('l_profit').innerText = formatRp(res.laporan_keuangan.profit_sementara);
+                    document.getElementById('l_piutang').innerText = formatRp(res.laporan_keuangan.piutang_berjalan);
+
+                    // Render Service
+                    let s_masuk = res.laporan_service.masuk;
+                    let s_selesai = res.laporan_service.selesai;
+                    let s_batal = res.laporan_service.batal;
+                    let s_proses = s_masuk - s_selesai - s_batal; // Sisa yang belum selesai/batal
+                    
+                    document.getElementById('s_masuk').innerText = s_masuk;
+                    document.getElementById('s_selesai').innerText = s_selesai;
+                    document.getElementById('s_batal').innerText = s_batal;
+
+                    renderChart(s_selesai, s_batal, s_proses < 0 ? 0 : s_proses);
+
+                    // Tampilkan Konten
+                    document.getElementById('loadingIndicator').classList.add('d-none');
+                    document.getElementById('laporanContent').classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                alert("Gagal memuat laporan. Periksa koneksi Anda.");
+                document.getElementById('loadingIndicator').classList.add('d-none');
+            });
+        }
+
+        function resetFilter() {
+            document.getElementById('filterStart').value = "";
+            document.getElementById('filterEnd').value = "";
+            loadLaporan();
+        }
+
+        // Load data awal
+        loadLaporan();
+
+    </script>
+</body>
+</html>
