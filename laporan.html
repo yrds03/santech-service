@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan - SANTECH SERVICE</title>
@@ -17,15 +20,16 @@
             --border-color: #E2E8F0; --text-main: #0F172A; --text-sec: #64748B;
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; overflow-x: hidden; }
-        
         .app-container { display: flex; height: 100vh; }
-        .sidebar { width: 250px; background: #FFFFFF; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 1000; }
-        .sidebar-logo { padding: 20px; font-size: 20px; font-weight: 700; color: var(--primary); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
-        .nav-item-custom { padding: 12px 20px; color: var(--text-sec); text-decoration: none; display: flex; align-items: center; gap: 15px; font-weight: 500; transition: 0.2s; }
-        .nav-item-custom:hover, .nav-item-custom.active { color: var(--primary); background: #EFF6FF; border-right: 4px solid var(--primary); }
+        
+        /* SIDEBAR GELAP MIRIP MOCKUP */
+        .sidebar { width: 250px; background: #0F172A; border-right: none; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 1000; }
+        .sidebar-logo { padding: 20px; font-size: 20px; font-weight: 700; color: #FFFFFF; border-bottom: 1px solid #1E293B; display: flex; align-items: center; gap: 10px; }
+        .nav-item-custom { padding: 12px 20px; color: #94A3B8; text-decoration: none; display: flex; align-items: center; gap: 15px; font-weight: 500; transition: 0.2s; }
+        .nav-item-custom:hover, .nav-item-custom.active { color: #FFFFFF; background: #1E293B; border-right: 4px solid var(--primary); }
+
         .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
         .top-navbar { background: #FFFFFF; height: 70px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 999; }
-        
         .card-custom { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; height: 100%; }
         
         /* Layout Mobile */
@@ -33,13 +37,7 @@
         .b-nav-item { text-align: center; color: var(--text-sec); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .b-nav-item.active { color: var(--primary); }
 
-        @media (max-width: 767px) {
-            .sidebar { display: none; }
-            .top-navbar { padding: 0 15px; }
-            .bottom-nav { display: flex; }
-            .main-content { padding-bottom: 80px; }
-        }
-
+        @media (max-width: 767px) { .sidebar { display: none; } .top-navbar { padding: 0 15px; } .bottom-nav { display: flex; } .main-content { padding-bottom: 80px; } }
         .stat-label { font-size: 13px; color: var(--text-sec); font-weight: 500; margin-bottom: 5px; }
         .stat-value { font-size: 24px; font-weight: 700; margin-bottom: 0; }
     </style>
@@ -47,7 +45,7 @@
 <body>
 
     <div class="app-container">
-        <!-- SIDEBAR -->
+        <!-- SIDEBAR FULL LINK -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-logo"><i data-lucide="cpu"></i> <span>SANTECH SERVICE</span></div>
             <div class="mt-3">
@@ -55,8 +53,10 @@
                 <a href="service.html" class="nav-item-custom"><i data-lucide="wrench"></i> <span>Service</span></a>
                 <a href="customer.html" class="nav-item-custom"><i data-lucide="users"></i> <span>Customer</span></a>
                 <a href="sparepart.html" class="nav-item-custom"><i data-lucide="package"></i> <span>Sparepart</span></a>
-                <a href="laporan.html" class="nav-item-custom active"><i data-lucide="bar-chart-3"></i> <span>Laporan</span></a>
+                <a href="teknisi-board.html" class="nav-item-custom"><i data-lucide="pen-tool"></i> <span>Ruang Teknisi</span></a>
                 <a href="kasir.html" class="nav-item-custom"><i data-lucide="calculator"></i> <span>Kasir / POS</span></a>
+                <a href="laporan.html" class="nav-item-custom active"><i data-lucide="bar-chart-3"></i> <span>Laporan</span></a>
+                <a href="pengaturan.html" class="nav-item-custom"><i data-lucide="settings"></i> <span>Pengaturan</span></a>
             </div>
         </nav>
 
@@ -68,8 +68,6 @@
             </header>
 
             <div class="p-4">
-                
-                <!-- Filter Tanggal -->
                 <div class="card-custom mb-4 p-3 d-flex flex-wrap align-items-center gap-3">
                     <div class="d-flex align-items-center gap-2">
                         <i data-lucide="calendar" class="text-sec"></i>
@@ -94,73 +92,32 @@
                 </div>
 
                 <div id="laporanContent" class="d-none">
-                    <!-- Section Keuangan -->
                     <h5 class="fw-bold mb-3">Ringkasan Keuangan</h5>
                     <div class="row g-4 mb-5">
-                        <div class="col-md-3 col-6">
-                            <div class="card-custom border-start border-primary border-4">
-                                <div class="stat-label">Pendapatan Kotor</div>
-                                <h3 class="stat-value text-primary" id="l_pendapatan">Rp 0</h3>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card-custom border-start border-danger border-4">
-                                <div class="stat-label">Pengeluaran Sparepart</div>
-                                <h3 class="stat-value text-danger" id="l_pengeluaran">Rp 0</h3>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card-custom border-start border-success border-4">
-                                <div class="stat-label">Profit Sementara</div>
-                                <h3 class="stat-value text-success" id="l_profit">Rp 0</h3>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card-custom border-start border-warning border-4">
-                                <div class="stat-label">Piutang Berjalan</div>
-                                <h3 class="stat-value text-warning" id="l_piutang">Rp 0</h3>
-                            </div>
-                        </div>
+                        <div class="col-md-3 col-6"><div class="card-custom border-start border-primary border-4"><div class="stat-label">Pendapatan Kotor</div><h3 class="stat-value text-primary" id="l_pendapatan">Rp 0</h3></div></div>
+                        <div class="col-md-3 col-6"><div class="card-custom border-start border-danger border-4"><div class="stat-label">Pengeluaran Sparepart</div><h3 class="stat-value text-danger" id="l_pengeluaran">Rp 0</h3></div></div>
+                        <div class="col-md-3 col-6"><div class="card-custom border-start border-success border-4"><div class="stat-label">Profit Sementara</div><h3 class="stat-value text-success" id="l_profit">Rp 0</h3></div></div>
+                        <div class="col-md-3 col-6"><div class="card-custom border-start border-warning border-4"><div class="stat-label">Piutang Berjalan</div><h3 class="stat-value text-warning" id="l_piutang">Rp 0</h3></div></div>
                     </div>
 
                     <div class="row g-4">
-                        <!-- Section Performa Service -->
                         <div class="col-lg-6">
                             <h5 class="fw-bold mb-3">Performa Service</h5>
                             <div class="row g-3 mb-4">
-                                <div class="col-4">
-                                    <div class="card-custom text-center bg-light border-0">
-                                        <div class="stat-label">Service Masuk</div>
-                                        <h3 class="stat-value text-dark" id="s_masuk">0</h3>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="card-custom text-center bg-success bg-opacity-10 border-0">
-                                        <div class="stat-label">Selesai (Sukses)</div>
-                                        <h3 class="stat-value text-success" id="s_selesai">0</h3>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="card-custom text-center bg-danger bg-opacity-10 border-0">
-                                        <div class="stat-label">Batal / Gagal</div>
-                                        <h3 class="stat-value text-danger" id="s_batal">0</h3>
-                                    </div>
-                                </div>
+                                <div class="col-4"><div class="card-custom text-center bg-light border-0"><div class="stat-label">Service Masuk</div><h3 class="stat-value text-dark" id="s_masuk">0</h3></div></div>
+                                <div class="col-4"><div class="card-custom text-center bg-success bg-opacity-10 border-0"><div class="stat-label">Selesai (Sukses)</div><h3 class="stat-value text-success" id="s_selesai">0</h3></div></div>
+                                <div class="col-4"><div class="card-custom text-center bg-danger bg-opacity-10 border-0"><div class="stat-label">Batal / Gagal</div><h3 class="stat-value text-danger" id="s_batal">0</h3></div></div>
                             </div>
                         </div>
 
-                        <!-- Chart Proporsi -->
                         <div class="col-lg-6">
                             <div class="card-custom">
                                 <h6 class="mb-3 text-center">Rasio Keberhasilan Service</h6>
-                                <div style="height: 250px; display: flex; justify-content: center;">
-                                    <canvas id="serviceChart"></canvas>
-                                </div>
+                                <div style="height: 250px; display: flex; justify-content: center;"><canvas id="serviceChart"></canvas></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </main>
     </div>
@@ -175,14 +132,8 @@
 
     <script>
         lucide.createIcons();
-        
-        // =========================================================================
-        // 👇 MASUKAN LINK URL DEPLOY GOOGLE APPS SCRIPT ANDA DI BAWAH INI 👇
-        // =========================================================================
         const API_URL = "https://script.google.com/macros/s/AKfycbyU5XBt076eZuFxWmfmI57Av_XazxpYFm_TEftCAZbRGyRXP7D_2NLnwwNU-7y7RTw0/exec";
-        // =========================================================================
 
-        // Cek Sesi
         const session = localStorage.getItem('user_session');
         if(session) {
             let ud = JSON.parse(session);
@@ -190,36 +141,18 @@
         }
 
         let chartInstance = null;
-
-        function formatRp(angka) {
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
-        }
+        function formatRp(angka) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0); }
 
         function renderChart(selesai, batal, proses) {
             const ctx = document.getElementById('serviceChart').getContext('2d');
-            
-            // Hapus chart lama jika ada
             if (chartInstance) chartInstance.destroy();
-
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Selesai / Sukses', 'Batal / Gagal', 'Sedang Diproses'],
-                    datasets: [{
-                        data: [selesai, batal, proses],
-                        backgroundColor: ['#22C55E', '#EF4444', '#3B82F6'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
+                    datasets: [{ data: [selesai, batal, proses], backgroundColor: ['#22C55E', '#EF4444', '#3B82F6'], borderWidth: 0, hoverOffset: 4 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } }
-                    },
-                    cutout: '70%'
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, cutout: '70%' }
             });
         }
 
@@ -238,26 +171,21 @@
             .then(res => {
                 if(res.status === "success") {
                     document.getElementById('txtPeriode').innerText = res.periode;
-                    
-                    // Render Keuangan
                     document.getElementById('l_pendapatan').innerText = formatRp(res.laporan_keuangan.pendapatan_kotor);
                     document.getElementById('l_pengeluaran').innerText = formatRp(res.laporan_keuangan.pengeluaran_sparepart);
                     document.getElementById('l_profit').innerText = formatRp(res.laporan_keuangan.profit_sementara);
                     document.getElementById('l_piutang').innerText = formatRp(res.laporan_keuangan.piutang_berjalan);
 
-                    // Render Service
                     let s_masuk = res.laporan_service.masuk;
                     let s_selesai = res.laporan_service.selesai;
                     let s_batal = res.laporan_service.batal;
-                    let s_proses = s_masuk - s_selesai - s_batal; // Sisa yang belum selesai/batal
+                    let s_proses = s_masuk - s_selesai - s_batal; 
                     
                     document.getElementById('s_masuk').innerText = s_masuk;
                     document.getElementById('s_selesai').innerText = s_selesai;
                     document.getElementById('s_batal').innerText = s_batal;
 
                     renderChart(s_selesai, s_batal, s_proses < 0 ? 0 : s_proses);
-
-                    // Tampilkan Konten
                     document.getElementById('loadingIndicator').classList.add('d-none');
                     document.getElementById('laporanContent').classList.remove('d-none');
                 }
@@ -274,9 +202,7 @@
             loadLaporan();
         }
 
-        // Load data awal
         loadLaporan();
-
     </script>
 </body>
 </html>
