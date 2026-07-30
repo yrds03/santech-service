@@ -1,11 +1,12 @@
 {
-  "name": "SANTECH SERVICE",
-  "short_name": "SANTECH",
-  "start_url": "./index.html",
+  "name": "SANSTECH Enterprise System",
+  "short_name": "SANSTECH",
+  "description": "Aplikasi Manajemen Servis & Kasir SANSTECH",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#F8FAFC",
-  "theme_color": "#2563EB",
-  "description": "Aplikasi Manajemen Service",
+  "theme_color": "#0F172A",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "sanstechservice.png",
