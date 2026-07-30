@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SANSTECH Enterprise</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F172A">
+    <link rel="apple-touch-icon" href="sanstechservice.png">
     
     <!-- Library CSS & JS -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1268,6 +1271,15 @@
         function formAddUser() { Swal.fire({ title: 'Tambah User Login', html: `<div class="text-start"><input id="us_nama" class="swal2-input m-0 mb-2 w-100" placeholder="Nama Lengkap"><input id="us_user" class="swal2-input m-0 mb-2 w-100" placeholder="Username"><input id="us_pass" type="password" class="swal2-input m-0 mb-2 w-100" placeholder="PIN (6 digit)"><select id="us_role" class="swal2-select m-0 mb-3 w-100" style="font-size:14px;"><option value="Teknisi">Teknisi</option><option value="Kasir">Kasir</option><option value="Admin">Admin</option></select><label class="fw-bold mb-1" style="font-size:12px;">Hak Akses Menu:</label><div class="row g-2" style="font-size:12px;" id="us_akses"><div class="col-6"><label><input type="checkbox" value="dashboard" checked> Dashboard</label></div><div class="col-6"><label><input type="checkbox" value="service" checked> Daftar Servis</label></div><div class="col-6"><label><input type="checkbox" value="teknisiboard"> Ruang Teknisi</label></div><div class="col-6"><label><input type="checkbox" value="kasir"> Kasir / POS</label></div><div class="col-6"><label><input type="checkbox" value="customer"> Pelanggan</label></div><div class="col-6"><label><input type="checkbox" value="perangkat"> Perangkat</label></div><div class="col-6"><label><input type="checkbox" value="sparepart"> Sparepart</label></div><div class="col-6"><label><input type="checkbox" value="supplier"> Supplier</label></div><div class="col-6"><label><input type="checkbox" value="pembayaran"> Transaksi</label></div><div class="col-6"><label><input type="checkbox" value="garansi"> Garansi</label></div><div class="col-6"><label><input type="checkbox" value="laporan"> Laporan</label></div><div class="col-6"><label><input type="checkbox" value="teknisi"> Master Teknisi</label></div><div class="col-6"><label><input type="checkbox" value="pengaturan"> Pengaturan</label></div></div></div>`, showCancelButton: true, confirmButtonText: 'Simpan', showLoaderOnConfirm: true, preConfirm: () => { let n = document.getElementById('us_nama'); let u = document.getElementById('us_user'); let p = document.getElementById('us_pass'); let r = document.getElementById('us_role'); let checkboxes = document.querySelectorAll('#us_akses input:checked'); let akses = Array.from(checkboxes).map(c => c.value).join(','); let pData = { nama: n?n.value:'', user: u?u.value:'', pass: p?p.value:'', role: r?r.value:'Teknisi', hak_akses: akses }; return handleMasterSubmit('addUser', pData); } }).then(r=>{ if(r.isConfirmed) { Swal.fire('Sukses','User baru berhasil ditambahkan!','success'); loadUserData(); } }); }
 
         document.addEventListener("DOMContentLoaded", initApp);
+    
+        // Mendaftarkan Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker Registered!', reg))
+                .catch(err => console.error('Service Worker Registration Failed!', err));
+            });
+        }
     </script>
 </body>
 </html>
