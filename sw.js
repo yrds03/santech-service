@@ -1,53 +1,48 @@
-const CACHE_NAME = "santech-v1";
+const CACHE_NAME = 'sanstech-enterprise-v1';
 const urlsToCache = [
-  "./",
-  "./index.html",
-  "./dashboard.html",
-  "./service.html",
-  "./teknisi-board.html",
-  "./kasir.html",
-  "./customer.html",
-  "./sparepart.html",
-  "./laporan.html",
-  "./pengaturan.html",
-  "./manifest.json"
+    './',
+    './index.html',
+    './manifest.json'
 ];
 
-// Menginstall Service Worker dan menyimpan file ke Cache
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache);
-    })
-  );
-});
-
-// Mengambil data dari Cache jika offline, atau dari Network jika online
-self.addEventListener("fetch", event => {
-  // Abaikan request ke Google Apps Script API agar data selalu real-time
-  if (event.request.url.includes("script.google.com")) {
-    return; 
-  }
-
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
-  );
-});
-
-// Menghapus Cache lama saat ada update
-self.addEventListener("activate", event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
+// 1. Install Service Worker & Cache Tampilan Awal
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+        .then(cache => {
+            console.log('Opened cache');
+            return cache.addAll(urlsToCache);
         })
-      );
-    })
-  );
+    );
+});
+
+// 2. Fetch Data (Bypass API Google Sheets agar tetap Real-Time)
+self.addEventListener('fetch', event => {
+    // Jika request ke Google Apps Script (Dynamic Data), jangan pakai cache
+    if (event.request.url.includes('script.google.com') || event.request.method === 'POST') {
+        return; 
+    }
+
+    // Untuk file HTML, CSS, JS, gunakan jaringan dulu, kalau offline baru pakai cache
+    event.respondWith(
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
+        })
+    );
+});
+
+// 3. Update Service Worker otomatis jika ada versi baru
+self.addEventListener('activate', event => {
+    const cacheWhitelist = [CACHE_NAME];
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
 });
