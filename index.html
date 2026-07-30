@@ -129,15 +129,26 @@
             @page { margin: 10mm; }
         }
 
+        /* BOTTOM NAV MOBILE */
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border-color); z-index: 1000; padding: 10px 20px; justify-content: space-around; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-bot-item { display: flex; flex-direction: column; align-items: center; color: var(--text-sec); text-decoration: none; font-size: 11px; font-weight: 600; gap: 4px; cursor: pointer; transition: 0.2s;}
+        .nav-bot-item.active { color: var(--primary); }
+        .nav-bot-item i { width: 22px; height: 22px; }
+
         /* RESPONSIVE MOBILE */
         @media (max-width: 991px) { 
-            .left-panel, .sidebar { display: none; } 
+            .left-panel { display: none; } 
+            .sidebar { position: fixed; left: -280px; top: 0; bottom: 0; transition: 0.3s ease; z-index: 1050; box-shadow: 2px 0 10px rgba(0,0,0,0.5); display: flex !important; }
+            .sidebar.show { left: 0; }
+            .sidebar-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index: 1040; }
+            .sidebar-overlay.show { display: block; }
             .right-panel { max-width: 100%; width: 100%; padding: 20px; } 
             .pin-box { width: 45px; height: 55px; font-size: 24px; border-radius: 10px;} 
-            .main-content { padding: 0 15px; } 
+            .main-content { padding: 0 15px 80px 15px; } /* Jarak untuk bottom nav */
             .top-navbar{ margin-left:-15px; margin-right:-15px; padding:0 15px;} 
             .pos-container { flex-direction: column; height: auto; }
             .pos-right { width: 100%; }
+            .mobile-bottom-nav { display: flex; }
         }
     </style>
 </head>
@@ -186,10 +197,17 @@
     =========================================== -->
     <div id="app-section" class="app-container d-none">
         
-        <nav class="sidebar no-print">
-            <div class="sidebar-logo">
-                <div class="icon-box"><i data-lucide="wrench" style="color: white; width: 20px;"></i></div>
-                <span>SANSTECH</span>
+        <!-- OVERLAY MENU HP -->
+        <div class="sidebar-overlay no-print" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
+
+        <nav class="sidebar no-print" id="mainSidebar">
+            <div class="sidebar-logo justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="icon-box"><i data-lucide="wrench" style="color: white; width: 20px;"></i></div>
+                    <span>SANSTECH</span>
+                </div>
+                <!-- TOMBOL CLOSE DI HP -->
+                <i data-lucide="x" class="d-lg-none" style="color:white; cursor:pointer;" onclick="toggleMobileMenu()"></i>
             </div>
             
             <div class="menu-label">MENU UTAMA</div>
@@ -657,7 +675,32 @@
                 </div>
             </div>
         </main>
+
+        <!-- NAVIGATION BAR BAWAH KHUSUS HP -->
+        <div class="mobile-bottom-nav no-print" id="bottomNav">
+            <div class="nav-bot-item active" onclick="switchPage('page-dashboard', this); updateBotNav(this)" data-menu="dashboard">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-bot-item" onclick="switchPage('page-service', this); updateBotNav(this)" data-menu="service">
+                <i data-lucide="list-todo"></i>
+                <span>Servis</span>
+            </div>
+            <div class="nav-bot-item" onclick="switchPage('page-kasir', this); updateBotNav(this)" data-menu="kasir">
+                <i data-lucide="calculator"></i>
+                <span>Kasir</span>
+            </div>
+            <div class="nav-bot-item" onclick="toggleMobileMenu()">
+                <i data-lucide="menu"></i>
+                <span>Menu</span>
+            </div>
+        </div>
+
     </div>
+
+    <!-- ==========================================
+         MODAL WIZARD: TAMBAH SERVIS
+    =========================================== -->
 
     <!-- MODAL WIZARD: TAMBAH SERVIS -->
     <div class="modal fade no-print" id="modalTambahService" data-bs-backdrop="static">
@@ -851,10 +894,25 @@
             let hakAkses = rawAkses;
             if (hakAkses !== 'all') {
                 let aksesArr = hakAkses.split(',').map(s => s.trim());
+                
+                // Sembunyikan Sidebar
                 document.querySelectorAll('.nav-item-custom').forEach(menu => {
                     let menuData = menu.getAttribute('data-menu');
-                    if (menuData && !aksesArr.includes(menuData)) menu.style.display = 'none';
-                    else menu.style.display = 'flex';
+                    if (menuData && !aksesArr.includes(menuData)) {
+                        menu.style.display = 'none'; 
+                    } else {
+                        menu.style.display = 'flex';
+                    }
+                });
+
+                // Sembunyikan Bottom Nav HP jika tidak ada akses
+                document.querySelectorAll('.nav-bot-item').forEach(menu => {
+                    let menuData = menu.getAttribute('data-menu');
+                    if (menuData && !aksesArr.includes(menuData)) {
+                        menu.style.display = 'none'; 
+                    } else {
+                        menu.style.display = 'flex';
+                    }
                 });
             }
             
@@ -926,14 +984,37 @@
             });
         }
         
-        function logout() { localStorage.removeItem('user_session'); localStorage.removeItem('last_active_page'); location.reload(); }
+        function logout() { 
+            localStorage.removeItem('user_session'); 
+            localStorage.removeItem('last_active_page'); 
+            location.reload(); 
+        }
+
+        // FUNGSI UNTUK MENU HP
+        function toggleMobileMenu() {
+            let sb = document.getElementById('mainSidebar');
+            let ov = document.getElementById('mobileOverlay');
+            if(sb) sb.classList.toggle('show');
+            if(ov) ov.classList.toggle('show');
+        }
+
+        function updateBotNav(el) {
+            document.querySelectorAll('.nav-bot-item').forEach(n => n.classList.remove('active'));
+            if(el) el.classList.add('active');
+        }
 
         function switchPage(pageId, el) {
             localStorage.setItem('last_active_page', pageId);
             document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+            
             let targetPage = document.getElementById(pageId);
             if(targetPage) targetPage.classList.add('active'); else { let dash = document.getElementById('page-dashboard'); if(dash) dash.classList.add('active'); }
+            
             if(el) { document.querySelectorAll('.nav-item-custom').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+            
+            // Tutup otomatis menu HP jika ngeklik dari sidebar
+            let sb = document.getElementById('mainSidebar');
+            if(sb && sb.classList.contains('show')) toggleMobileMenu();
             
             try {
                 if(pageId === 'page-dashboard') loadDashboard(); else if(pageId === 'page-service') loadServiceData(); else if(pageId === 'page-customer') loadCustomerData(); 
