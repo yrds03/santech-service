@@ -741,7 +741,13 @@
                         <div class="wizard-step" id="step-3">
                             <h6 class="fw-bold mb-3">Estimasi & Teknisi</h6>
                             <div class="row g-3">
-                                <div class="col-md-6"><label class="form-label text-sec" style="font-size:12px;">Estimasi Biaya (Rp)</label><input type="number" class="form-control fw-bold text-primary" id="f_biaya"></div>
+                                <div class="col-md-6">
+    <label class="form-label text-sec" style="font-size:12px;">Gunakan Sparepart?</label>
+    <select class="form-select" id="f_sparepart" onchange="pilihSparepart(this)">
+        <option value="">-- Tidak Pakai / Manual --</option>
+    </select>
+</div>
+<div class="col-md-6"><label class="form-label text-sec" style="font-size:12px;">Estimasi Biaya (Rp)</label><input type="number" class="form-control fw-bold text-primary" id="f_biaya"></div>
                                 <div class="col-md-6"><label class="form-label text-sec" style="font-size:12px;">Tugaskan Ke Teknisi</label><select class="form-select" id="f_teknisi"><option value="">Memuat Teknisi...</option></select></div>
                                 <div class="col-md-6"><label class="form-label text-sec" style="font-size:12px;">Prioritas</label><select class="form-select" id="f_prioritas"><option value="Normal">Normal</option><option value="Tinggi">Tinggi</option><option value="Urgent">Urgent</option></select></div>
                                 <div class="col-md-6"><label class="form-label text-sec" style="font-size:12px;">Target Selesai (Tgl/Jam)</label><input type="date" class="form-control" id="f_target"></div>
@@ -1094,7 +1100,8 @@
                 nama_customer: document.getElementById('f_nama').value, no_wa: document.getElementById('f_wa').value, alamat: document.getElementById('f_alamat').value, email: document.getElementById('f_email').value,
                 brand_hp: document.getElementById('f_brand').value, tipe_hp: document.getElementById('f_tipe').value, warna: document.getElementById('f_warna').value, imei_sn: document.getElementById('f_imei').value, kondisi_fisik: document.getElementById('f_kondisi').value,
                 password_hp: document.getElementById('f_pass').value, pola_hp: document.getElementById('f_pola').value, kelengkapan: document.getElementById('f_kelengkapan').value, keluhan_kerusakan: document.getElementById('f_keluhan').value, 
-                estimasi_biaya: document.getElementById('f_biaya').value, prioritas: document.getElementById('f_prioritas').value, target_selesai: document.getElementById('f_target').value, teknisi: tek 
+                estimasi_biaya: document.getElementById('f_biaya').value, prioritas: document.getElementById('f_prioritas').value, target_selesai: document.getElementById('f_target').value, teknisi: tek,
+                kode_sparepart: document.getElementById('f_sparepart') ? document.getElementById('f_sparepart').value : ''
             };
             
             fetch(API_URL, { method: "POST", body: JSON.stringify({ api_key: API_KEY, action: "addService", data: pData }) }).then(r => r.json()).then(res => {
@@ -1205,8 +1212,47 @@
             return fetch(API_URL, { method: 'POST', body: JSON.stringify({ api_key: API_KEY, action: action, data: pData }) }).then(r => r.text()).then(txt => { try { let res = JSON.parse(txt); if(res.status !== 'success') throw new Error(res.message); return res; } catch(e) { if(txt.includes('<html')) throw new Error("API Gagal / Lupa Deploy Versi Baru di Apps Script!"); throw new Error(e.message || "Kesalahan Server"); } }).catch(err => { Swal.showValidationMessage(`Gagal: ${err.message}`); throw err; }); 
         };
 
-        function loadSparepartData() { fetch(API_URL + "?api_key=" + API_KEY + "&action=getSparepartList").then(r => r.json()).then(res => { if(res.status === "success") { allPartsData = res.data; renderPartTable(allPartsData); } }); }
+        function loadSparepartData() { 
+            fetch(API_URL + "?api_key=" + API_KEY + "&action=getSparepartList").then(r => r.json()).then(res => { 
+                if(res.status === "success") { 
+                    allPartsData = res.data; renderPartTable(allPartsData); 
+                    
+                    // Update Dropdown Sparepart
+                    let optSp = `<option value="">-- Tidak Pakai / Manual --</option>`;
+                    allPartsData.forEach(p => { if (p.stok > 0) optSp += `<option value="${p.kode_sparepart}" data-harga="${p.harga_jual}">${p.nama_sparepart} (Stok: ${p.stok}) - Rp ${p.harga_jual}</option>`; });
+                    let fsp = document.getElementById('f_sparepart'); if(fsp) fsp.innerHTML = optSp;
+                } 
+            }); 
+        }
 
+        function pilihSparepart(sel) {
+            let biayaInput = document.getElementById('f_biaya');
+            if(sel.value !== "") { biayaInput.value = sel.options[sel.selectedIndex].getAttribute('data-harga'); } 
+            else { biayaInput.value = ""; }
+        }
+
+        function loadCustomerData() { 
+            if(allPaymentData.length === 0) {
+                fetch(API_URL + "?api_key=" + API_KEY + "&action=getPembayaranList").then(r=>r.json()).then(res=>{ if(res.status==="success") allPaymentData = res.data; renderCustomer(); });
+            } else { renderCustomer(); }
+            
+            function renderCustomer() {
+                fetch(API_URL + "?api_key=" + API_KEY + "&action=getCustomerList").then(r=>r.json()).then(res=>{ 
+                    if(res.status==="success") { 
+                        let html = ""; 
+                        res.data.forEach(c => { 
+                            let countSrv = allServiceData.filter(s => s.nama_customer === c.nama_customer || s.no_wa === c.no_wa).length; 
+                            let totalBelanjaReal = allPaymentData.filter(p => p.nama_customer === c.nama_customer).reduce((sum, p) => sum + (Number(p.nominal) || 0), 0);
+                            
+                            if (countSrv > 0 || totalBelanjaReal > 0) { 
+                                html += `<tr><td class="fw-bold">${c.nama_customer}</td><td>${c.no_wa}</td><td>${c.email||'-'}</td><td class="fw-bold text-primary">${countSrv}</td><td class="text-success fw-bold">${fRp(totalBelanjaReal)}</td></tr>`; 
+                            } 
+                        }); 
+                        let tb = document.getElementById('tableCustomer'); if(tb) tb.innerHTML = html || '<tr><td colspan="5" class="text-center">Belum ada data pelanggan</td></tr>'; 
+                    } 
+                });
+            }
+        }
         function renderPartTable(dataArray) { 
             let tb = document.getElementById('tableSparepart'); if(!tb) return;
             let html = ""; 
@@ -1241,16 +1287,25 @@
 
         function formAddSupplier() { Swal.fire({ title: 'Tambah Supplier', html: `<div class="row g-3 text-start mt-2"><div class="col-md-12"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Nama Toko/Supplier</label><input type="text" id="su_nama" class="form-control" placeholder="Cth: PT Bintang Part"></div><div class="col-md-6"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">No HP/WA</label><input type="text" id="su_hp" class="form-control" placeholder="0812..."></div><div class="col-md-6"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Nama PIC</label><input type="text" id="su_pic" class="form-control" placeholder="Cth: Budi"></div><div class="col-md-12"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Alamat Lengkap</label><textarea id="su_alamat" class="form-control" rows="2" placeholder="Alamat lengkap toko..."></textarea></div></div>`, width: '600px', showCancelButton: true, confirmButtonColor: '#2563EB', confirmButtonText: 'Simpan', showLoaderOnConfirm: true, preConfirm: () => { let pData = { nama: document.getElementById('su_nama').value, hp: document.getElementById('su_hp').value, pic: document.getElementById('su_pic').value, alamat: document.getElementById('su_alamat').value }; return handleMasterSubmit('addSupplier', pData); } }).then(r=>{ if(r.isConfirmed) { Swal.fire('Tersimpan', 'Supplier masuk Database!', 'success'); loadSupplierData(); } }); }
 
-        function klaimGaransi(nama, hp, brand, tipe) {
-            Swal.fire({ title: 'Buat Klaim Garansi?', text: `Sistem akan membuat tiket servis baru untuk ${nama} dengan biaya Rp 0.`, icon: 'info', showCancelButton: true, confirmButtonText: 'Ya, Buat Tiket' }).then(r => {
+        function klaimGaransi(id_service) {
+            let srv = allServiceData.find(x => x.id_service === id_service);
+            if(!srv) return Swal.fire('Oops', 'Data servis asli tidak ditemukan.', 'error');
+
+            Swal.fire({ title: 'Buat Klaim Garansi?', text: `Sistem akan membuat tiket servis gratis untuk ${srv.nama_customer}. IMEI, Tipe, & Keluhan akan dicopy otomatis.`, icon: 'info', showCancelButton: true, confirmButtonText: 'Ya, Buat Tiket' }).then(r => {
                 if(r.isConfirmed) {
-                    let pData = { nama_customer: nama, no_wa: hp, alamat: "", email: "", brand_hp: brand, tipe_hp: tipe, warna: "", imei_sn: "", kondisi_fisik: "Klaim Garansi", password_hp: "", pola_hp: "", kelengkapan: "", keluhan_kerusakan: "KLAIM GARANSI", estimasi_biaya: 0, prioritas: "Tinggi", target_selesai: "", teknisi: "" };
+                    let pData = { 
+                        nama_customer: srv.nama_customer, no_wa: srv.no_wa, alamat: srv.alamat || "", email: srv.email || "", 
+                        brand_hp: srv.brand_hp, tipe_hp: srv.tipe_hp, warna: srv.warna || "", imei_sn: srv.imei_sn || "", kondisi_fisik: "Klaim Garansi. Kondisi awal: " + (srv.kondisi_fisik || ""), 
+                        password_hp: srv.password_hp || "", pola_hp: srv.pola_hp || "", kelengkapan: srv.kelengkapan || "", 
+                        keluhan_kerusakan: "KLAIM GARANSI DARI " + id_service + ". Keluhan awal: " + srv.keluhan_kerusakan, 
+                        estimasi_biaya: 0, prioritas: "Tinggi", target_selesai: "", teknisi: "" 
+                    };
                     fetch(API_URL, { method: "POST", body: JSON.stringify({ api_key: API_KEY, action: "addService", data: pData }) }).then(r=>r.json()).then(res=>{ Swal.fire('Sukses', 'Tiket Garansi ID: '+res.id_service+' berhasil dibuat.', 'success'); loadServiceData(); switchPage('page-service'); });
                 }
             });
         }
         
-        function loadGaransiData() { fetch(API_URL + "?api_key=" + API_KEY + "&action=getGaransiList").then(r=>r.json()).then(res=>{ if(res.status==="success") { let tb = document.getElementById('tableGaransi'); if(tb) { tb.innerHTML = res.data.map(g=>{ let nc = g.nama_customer || ''; let nw = g.no_wa || ''; let bh = g.brand_hp || ''; let th = g.tipe_hp || ''; let safeName = nc.replace(/'/g, "\\'"); let safeBrand = bh.replace(/'/g, "\\'"); let safeTipe = th.replace(/'/g, "\\'"); let btn = g.status === 'Aktif' ? `<button class="btn btn-sm btn-primary" onclick="klaimGaransi('${safeName}', '${nw}', '${safeBrand}', '${safeTipe}')"><i data-lucide="refresh-cw" style="width:12px;"></i> Klaim</button>` : `<span class="text-sec">Expired</span>`; return `<tr><td class="fw-bold">${g.no_garansi || ''}</td><td class="text-primary">${g.id_service || ''}</td><td>${nc}</td><td>${bh} ${th}</td><td class="text-danger fw-bold">${g.tanggal_sampai || '-'}</td><td><span class="badge ${g.status==='Aktif'?'bg-success':'bg-danger'}">${g.status || ''}</span></td><td>${btn}</td></tr>`; }).join(''); try { lucide.createIcons(); } catch(e){} } } }); }
+        function loadGaransiData() { fetch(API_URL + "?api_key=" + API_KEY + "&action=getGaransiList").then(r=>r.json()).then(res=>{ if(res.status==="success") { let tb = document.getElementById('tableGaransi'); if(tb) { tb.innerHTML = res.data.map(g=>{ let btn = g.status === 'Aktif' ? `<button class="btn btn-sm btn-primary" onclick="klaimGaransi('${g.id_service}')"><i data-lucide="refresh-cw" style="width:12px;"></i> Klaim</button>` : `<span class="text-sec">Expired</span>`; return `<tr><td class="fw-bold">${g.no_garansi || ''}</td><td class="text-primary">${g.id_service || ''}</td><td>${g.nama_customer || ''}</td><td>${g.brand_hp || ''} ${g.tipe_hp || ''}</td><td class="text-danger fw-bold">${g.tanggal_sampai || '-'}</td><td><span class="badge ${g.status==='Aktif'?'bg-success':'bg-danger'}">${g.status || ''}</span></td><td>${btn}</td></tr>`; }).join(''); try { lucide.createIcons(); } catch(e){} } } }); }
         
         function loadPaymentData() { fetch(API_URL + "?api_key=" + API_KEY + "&action=getPembayaranList").then(r=>r.json()).then(res=>{ if(res.status==="success") { allPaymentData = res.data; let tb = document.getElementById('tablePembayaran'); if(tb) { tb.innerHTML = res.data.map(p=>`<tr><td>${p.id_pembayaran || ''}</td><td>${p.tanggal || ''}</td><td class="fw-bold text-primary">${p.id_service || ''}</td><td>${p.nama_customer || ''}</td><td><span class="badge bg-light text-dark border">${p.jenis || ''}</span></td><td>${p.metode || ''}</td><td class="text-success fw-bold">${fRp(p.nominal)}</td><td><button class="btn btn-sm btn-dark" onclick="cetakUlangInvoice('${p.id_pembayaran}')"><i data-lucide="printer" style="width:14px;"></i></button></td></tr>`).join(''); try{ lucide.createIcons(); } catch(e){} } } }); }
         
@@ -1345,7 +1400,21 @@
         
         function formAddTeknisi() { Swal.fire({ title: 'Tambah Teknisi', html: `<div class="row g-3 text-start mt-2"><div class="col-md-6"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Nama Lengkap</label><input type="text" id="sw_nama" class="form-control" placeholder="Cth: Andi"></div><div class="col-md-6"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Keahlian</label><input type="text" id="sw_skill" class="form-control" placeholder="Hardware / Software"></div><div class="col-md-12"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Gaji Pokok</label><div class="input-group"><span class="input-group-text bg-light">Rp</span><input type="number" id="sw_gaji" class="form-control" placeholder="0"></div></div><div class="col-md-4"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Komisi (%)</label><input type="number" id="sw_komisi" class="form-control" placeholder="10"></div><div class="col-md-4"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Target/Bulan</label><input type="number" id="sw_target" class="form-control" placeholder="Cth: 50"></div><div class="col-md-4"><label class="form-label text-sec" style="font-size:12px; font-weight:600;">Jam Kerja</label><input type="text" id="sw_jam" class="form-control" placeholder="09:00 - 17:00"></div></div>`, width: '600px', showCancelButton: true, confirmButtonColor: '#2563EB', confirmButtonText: 'Simpan', showLoaderOnConfirm: true, preConfirm: () => { let n = document.getElementById('sw_nama'); let s = document.getElementById('sw_skill'); let g = document.getElementById('sw_gaji'); let k = document.getElementById('sw_komisi'); let t = document.getElementById('sw_target'); let j = document.getElementById('sw_jam'); let pData = { nama: n ? n.value : '', skill: s ? s.value : '', gaji: g ? g.value : 0, komisi: k ? k.value : 0, target: t ? t.value : 0, jam: j ? j.value : '' }; return handleMasterSubmit('addTeknisi', pData); } }).then((r) => { if (r.isConfirmed) { Swal.fire('Tersimpan', 'Data teknisi masuk ke Database!', 'success'); loadTeknisiData(); } }); }
         
-        function loadUserData() { fetch(API_URL + "?api_key=" + API_KEY + "&action=getUserList").then(r=>r.json()).then(res=>{ if(res.status==="success") { let tb = document.getElementById('tableUser'); if(tb) { tb.innerHTML = res.data.map(u=>`<tr><td class="fw-bold">${u.nama_lengkap||''}</td><td>${u.username||''}</td><td><span class="badge bg-primary">${u.role||''}</span></td><td>Aktif</td></tr>`).join(''); } } }); }
+        function loadUserData() { fetch(API_URL + "?api_key=" + API_KEY + "&action=getUserList").then(r=>r.json()).then(res=>{ if(res.status==="success") { let tb = document.getElementById('tableUser'); if(tb) { tb.innerHTML = res.data.map(u=>`<tr><td class="fw-bold">${u.nama_lengkap||''}</td><td>${u.username||''}</td><td><span class="badge bg-primary">${u.role||''}</span></td><td><button class="btn btn-sm btn-light border me-1" title="Ubah PIN" onclick="editPinUser('${u.username}')"><i data-lucide="key" style="width:14px;"></i></button><button class="btn btn-sm btn-outline-danger border" title="Hapus User" onclick="hapusUser('${u.username}')"><i data-lucide="trash-2" style="width:14px;"></i></button></td></tr>`).join(''); try{lucide.createIcons();}catch(e){} } } }); }
+
+        function hapusUser(username) {
+            if(username === 'admin') return Swal.fire('Ditolak', 'Admin utama tidak boleh dihapus!', 'error');
+            Swal.fire({ title: 'Hapus Karyawan?', text: "Akun " + username + " akan dihapus permanen!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#EF4444', confirmButtonText: 'Ya, Hapus' }).then(r => { 
+                if(r.isConfirmed) { fetch(API_URL, { method: "POST", body: JSON.stringify({ api_key: API_KEY, action: "deleteUser", username: username }) }).then(() => loadUserData()); } 
+            }); 
+        }
+
+        function editPinUser(username) {
+            Swal.fire({ title: 'Ubah PIN Login', input: 'password', inputAttributes: { maxlength: 6, placeholder: 'Ketik 6 digit PIN baru' }, showCancelButton: true, confirmButtonText: 'Update PIN', preConfirm: (pin) => {
+                if(!pin || pin.length < 4) return Swal.showValidationMessage('PIN minimal 4 digit!');
+                return fetch(API_URL, { method: 'POST', body: JSON.stringify({ api_key: API_KEY, action: 'updatePinUser', username: username, new_pin: pin }) });
+            } }).then(r => { if(r.isConfirmed) Swal.fire('Sukses', 'PIN berhasil diubah!', 'success'); });
+        }
 
         function formAddUser() { Swal.fire({ title: 'Tambah User Login', html: `<div class="text-start"><input id="us_nama" class="swal2-input m-0 mb-2 w-100" placeholder="Nama Lengkap"><input id="us_user" class="swal2-input m-0 mb-2 w-100" placeholder="Username"><input id="us_pass" type="password" class="swal2-input m-0 mb-2 w-100" placeholder="PIN (6 digit)"><select id="us_role" class="swal2-select m-0 mb-3 w-100" style="font-size:14px;"><option value="Teknisi">Teknisi</option><option value="Kasir">Kasir</option><option value="Admin">Admin</option></select><label class="fw-bold mb-1" style="font-size:12px;">Hak Akses Menu:</label><div class="row g-2" style="font-size:12px;" id="us_akses"><div class="col-6"><label><input type="checkbox" value="dashboard" checked> Dashboard</label></div><div class="col-6"><label><input type="checkbox" value="service" checked> Daftar Servis</label></div><div class="col-6"><label><input type="checkbox" value="teknisiboard"> Ruang Teknisi</label></div><div class="col-6"><label><input type="checkbox" value="kasir"> Kasir / POS</label></div><div class="col-6"><label><input type="checkbox" value="customer"> Pelanggan</label></div><div class="col-6"><label><input type="checkbox" value="perangkat"> Perangkat</label></div><div class="col-6"><label><input type="checkbox" value="sparepart"> Sparepart</label></div><div class="col-6"><label><input type="checkbox" value="supplier"> Supplier</label></div><div class="col-6"><label><input type="checkbox" value="pembayaran"> Transaksi</label></div><div class="col-6"><label><input type="checkbox" value="garansi"> Garansi</label></div><div class="col-6"><label><input type="checkbox" value="laporan"> Laporan</label></div><div class="col-6"><label><input type="checkbox" value="teknisi"> Master Teknisi</label></div><div class="col-6"><label><input type="checkbox" value="pengaturan"> Pengaturan</label></div></div></div>`, showCancelButton: true, confirmButtonText: 'Simpan', showLoaderOnConfirm: true, preConfirm: () => { let n = document.getElementById('us_nama'); let u = document.getElementById('us_user'); let p = document.getElementById('us_pass'); let r = document.getElementById('us_role'); let checkboxes = document.querySelectorAll('#us_akses input:checked'); let akses = Array.from(checkboxes).map(c => c.value).join(','); let pData = { nama: n?n.value:'', user: u?u.value:'', pass: p?p.value:'', role: r?r.value:'Teknisi', hak_akses: akses }; return handleMasterSubmit('addUser', pData); } }).then(r=>{ if(r.isConfirmed) { Swal.fire('Sukses','User baru berhasil ditambahkan!','success'); loadUserData(); } }); }
 
